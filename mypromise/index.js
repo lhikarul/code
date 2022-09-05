@@ -5,6 +5,18 @@ class myPromise {
   static PENDING = "pending";
   static FULFILLED = "fulfilled";
   static REJECTED = "rejected";
+  static resolve = (value) => {
+    return new myPromise((resolve) => {
+      resolve(value);
+    });
+  };
+
+  static reject = (value) => {
+    return new myPromise((resolve, reject) => {
+      reject(value);
+    });
+  };
+
   constructor(func) {
     this.PromiseState = myPromise.PENDING;
     this.PromiseResult = null;
@@ -72,11 +84,10 @@ class myPromise {
           // 2.2.7.1
           try {
             let x = onFulfilled(this.PromiseResult);
-            console.log("x ", x, promise2);
             resolvePromise(promise2, x, resolve, reject);
           } catch (e) {
             // 2.2.7.2
-            reject();
+            reject(e);
           }
         });
       }
@@ -96,11 +107,18 @@ class myPromise {
 
     return promise2;
   }
+  catch(onRejected) {
+    return this.then(undefined, onRejected);
+  }
+  finally(callback) {
+    return this.then(callback, callback);
+  }
 }
 
 function resolvePromise(promise2, x, resolve, reject) {
-  // 2.3.1
+  // // 2.3.1
   if (x === promise2) {
+    console.log(new TypeError("haining cycle detected for promise"));
     return reject(new TypeError("Chaining cycle detected for promise"));
   }
   // 2.3.2  如果 x 为 Promise ，则使 promise 接受 x 的状态
@@ -145,17 +163,31 @@ function resolvePromise(promise2, x, resolve, reject) {
       resolve(x);
     }
   } else {
+    // 2.3.4 如果 x 不为对象或者函数，以 x 为参数执行 promise
     return resolve(x);
   }
 }
 
-myPromise.deferred = function () {
-  let result = {};
-  result.promise = new myPromise((resolve, reject) => {
-    result.resolve = resolve;
-    result.reject = reject;
-  });
-  return result;
-};
+// myPromise.deferred = function () {
+//   let result = {};
+//   result.promise = new myPromise((resolve, reject) => {
+//     result.resolve = resolve;
+//     result.reject = reject;
+//   });
+//   return result;
+// };
 
-module.exports = myPromise;
+// module.exports = myPromise;
+
+let p1 = new myPromise(function (resolve, reject) {
+  resolve(1);
+})
+  // .then(function (value) {
+  //   console.log(value);
+  // })
+  // .catch(function (e) {
+  //   console.log(e);
+  // })
+  .finally(function () {
+    console.log("finanlly");
+  });
